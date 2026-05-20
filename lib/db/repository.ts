@@ -285,3 +285,31 @@ export async function reRunFitnessTest(input: FitnessTestInput): Promise<void> {
 export async function wipeAllData(): Promise<void> {
   await deleteAllData();
 }
+
+// ─── Strava token management ──────────────────────────────────────────────────
+
+import type { StravaTokens } from "@/lib/strava/types";
+
+export async function saveStravaTokens(tokens: StravaTokens): Promise<void> {
+  await db.users.update(USER_ID, {
+    stravaAccessToken: tokens.access_token,
+    stravaRefreshToken: tokens.refresh_token,
+    stravaTokenExpiresAt: tokens.expires_at,
+    stravaAthleteId: tokens.athlete_id,
+    stravaAthleteName: tokens.athlete_name,
+  });
+}
+
+export async function clearStravaTokens(): Promise<void> {
+  await db.users.update(USER_ID, {
+    stravaAccessToken: undefined,
+    stravaRefreshToken: undefined,
+    stravaTokenExpiresAt: undefined,
+    stravaAthleteId: undefined,
+    stravaAthleteName: undefined,
+  });
+}
+
+export async function saveStravaActivityId(workoutId: string, stravaId: number): Promise<void> {
+  await db.workouts.update(workoutId, { stravaActivityId: stravaId } as never);
+}

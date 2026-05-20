@@ -23,3 +23,13 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Claude Code memory
+.claude/
+
+# PWA generated files (regenerated at build time)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/workbox-*.js
+public/workbox-*.js.map

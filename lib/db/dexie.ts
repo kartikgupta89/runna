@@ -12,6 +12,12 @@ export interface UserRecord {
   preferredUnits: "metric" | "imperial";
   currentVDOT: number;
   createdAt: Date;
+  // Strava OAuth tokens (optional — only present when connected)
+  stravaAccessToken?: string;
+  stravaRefreshToken?: string;
+  stravaTokenExpiresAt?: number; // Unix timestamp (seconds)
+  stravaAthleteId?: number;
+  stravaAthleteName?: string;
 }
 
 export interface FitnessTestRecord {
@@ -66,6 +72,7 @@ export interface WorkoutRecord {
   perceivedEffort?: number;
   notes?: string;
   gpsTrack?: GpsPoint[];
+  stravaActivityId?: number;
 }
 
 // Re-export with the old Row suffixes so UI components need only a path change

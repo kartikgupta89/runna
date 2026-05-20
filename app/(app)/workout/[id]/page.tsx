@@ -8,6 +8,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { getUser, getWorkoutById } from "@/lib/db/repository";
 import { WorkoutDetail } from "@/components/workout/WorkoutDetail";
 import { LogForm } from "@/components/workout/LogForm";
+import { StravaRunOption } from "@/components/run/StravaRunOption";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,9 +81,18 @@ export default function WorkoutPage() {
           <Button asChild className="w-full gap-2" size="lg">
             <Link href={`/run/${workout.id}`}>
               <MapPin className="h-4 w-4" />
-              Start GPS Run
+              Start / Track Run
             </Link>
           </Button>
+        )}
+
+        {/* Sync from Strava on the detail page (for re-sync or if skipped the run screen) */}
+        {isLoggable && (
+          <StravaRunOption
+            workoutId={workout.id}
+            workoutDate={workout.date}
+            units={user?.preferredUnits ?? "metric"}
+          />
         )}
 
         {gpsTrack && gpsTrack.length > 1 && (
