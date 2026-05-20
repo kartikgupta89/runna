@@ -30,7 +30,11 @@ export default function TodayPage() {
   const plan = useLiveQuery(() => getActivePlan(), [], null);
   const todayWorkouts = useLiveQuery(() => getWorkoutsForDate(today), [], null);
 
-  const currentWeekNum = plan && plan !== null ? currentWeekNumber(plan.startDate, today) : 0;
+  const totalPlanWeeks = plan && plan !== null
+    ? Math.ceil((plan.raceDate.getTime() - plan.startDate.getTime()) / (7 * 24 * 60 * 60 * 1000))
+    : 0;
+  const rawWeekNum = plan && plan !== null ? currentWeekNumber(plan.startDate, today) : 0;
+  const currentWeekNum = Math.min(rawWeekNum, totalPlanWeeks);
   const weekWorkouts = useLiveQuery(
     () => (plan && plan !== null && currentWeekNum > 0
       ? getWorkoutsForWeek(plan.id, currentWeekNum)

@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${base}/settings?strava=error`);
   }
 
+  if (!process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
+    return NextResponse.redirect(`${base}/settings?strava=error`);
+  }
+
   const tokenRes = await fetch("https://www.strava.com/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

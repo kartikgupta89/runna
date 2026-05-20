@@ -311,5 +311,5 @@ export async function clearStravaTokens(): Promise<void> {
 }
 
 export async function saveStravaActivityId(workoutId: string, stravaId: number): Promise<void> {
-  await db.workouts.update(workoutId, { stravaActivityId: stravaId } as never);
+  await db.workouts.update(workoutId, { stravaActivityId: stravaId });
 }

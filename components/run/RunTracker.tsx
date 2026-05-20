@@ -154,15 +154,18 @@ export function RunTracker({
     setIsSaving(true);
     const track = pointsRef.current;
     const dist = distRef.current;
-    const avgPace = dist > 0 && elapsedS > 0 ? elapsedS / (dist / 1_000) : undefined;
-
-    await completeWorkout(workoutId, {
-      actualDistanceKm: dist / 1_000,
-      actualDurationMin: elapsedS / 60,
-      gpsTrack: track.length > 0 ? track : undefined,
-    });
-
-    router.push(`/workout/${workoutId}`);
+    try {
+      await completeWorkout(workoutId, {
+        actualDistanceKm: dist / 1_000,
+        actualDurationMin: elapsedS / 60,
+        gpsTrack: track.length > 0 ? track : undefined,
+      });
+      router.push(`/workout/${workoutId}`);
+    } catch {
+      setIsSaving(false);
+      // Surface error in the stopped-state UI
+      setGpsError("Failed to save your run. Please try again.");
+    }
   }
 
   function handleDiscard() {

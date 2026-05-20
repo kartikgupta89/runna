@@ -7,6 +7,8 @@ const withPWA = withPWAInit({
   reloadOnOnline: true,
   workboxOptions: {
     disableDevLogs: true,
+    // Never cache API routes — they need live network to talk to Strava
+    exclude: [/\/api\//],
   },
 });
 

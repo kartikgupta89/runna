@@ -96,7 +96,11 @@ export function SetupWizard() {
     }
     if (step === 4) {
       if (!form.raceDateIso) return "Select your race date";
-      if (new Date(form.raceDateIso) <= new Date()) return "Race date must be in the future";
+      // Compare date-only strings to avoid timezone mismatch (ISO date is local date)
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() + 56);
+      const minIsoVal = minDate.toISOString().split("T")[0];
+      if (form.raceDateIso < minIsoVal) return "Race date must be at least 8 weeks away";
       const days = parseInt(form.daysPerWeek);
       if (isNaN(days) || days < 3 || days > 6) return "Days per week must be between 3 and 6";
     }

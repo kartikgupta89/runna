@@ -7,6 +7,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing refresh_token" }, { status: 400 });
   }
 
+  if (!process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
+    return NextResponse.json({ error: "Strava not configured" }, { status: 503 });
+  }
+
   const res = await fetch("https://www.strava.com/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

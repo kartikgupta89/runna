@@ -21,11 +21,18 @@ function StravaConnectInner() {
       return;
     }
 
+    const expiresAt = parseInt(ea, 10);
+    const athleteId = parseInt(aid, 10);
+    if (isNaN(expiresAt) || isNaN(athleteId)) {
+      setStatus("error");
+      return;
+    }
+
     saveStravaTokens({
       access_token: at,
       refresh_token: rt,
-      expires_at: parseInt(ea),
-      athlete_id: parseInt(aid),
+      expires_at: expiresAt,
+      athlete_id: athleteId,
       athlete_name: name,
     })
       .then(() => router.replace("/settings?strava=connected"))

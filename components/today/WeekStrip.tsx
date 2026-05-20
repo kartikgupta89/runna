@@ -52,7 +52,9 @@ export function WeekStrip({ workouts, todayDate }: WeekStripProps) {
           d.getDate() === todayDate.getDate() &&
           d.getMonth() === todayDate.getMonth() &&
           d.getFullYear() === todayDate.getFullYear();
-        const isPast = d < new Date(todayDate.setHours(0, 0, 0, 0));
+        const todayMidnight = new Date(todayDate);
+        todayMidnight.setHours(0, 0, 0, 0);
+        const isPast = d < todayMidnight;
         const dayWorkouts = workoutsForDay(d);
         const mainWorkout = dayWorkouts.find((w) => w.type !== "rest");
         const isRest = !mainWorkout && dayWorkouts.length > 0;

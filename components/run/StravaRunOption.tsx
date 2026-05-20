@@ -29,10 +29,11 @@ export function StravaRunOption({ workoutId, workoutDate, units }: StravaRunOpti
   const [isSaving, setIsSaving] = useState(false);
 
   function openStrava() {
-    // Try deep link first, fall back to website after 1.5s
+    // Try deep link; if Strava isn't installed the browser ignores it
+    // Use location.href for fallback too (window.open is blocked outside gesture)
     window.location.href = "strava://";
     setTimeout(() => {
-      window.open("https://www.strava.com/dashboard", "_blank");
+      window.location.href = "https://www.strava.com/dashboard";
     }, 1500);
     setPhase("opened");
   }
@@ -84,16 +85,15 @@ export function StravaRunOption({ workoutId, workoutDate, units }: StravaRunOpti
   async function importActivity(activity: StravaSummaryActivity) {
     setIsSaving(true);
     try {
-      const paceSecPerKm =
-        activity.distance > 0 && activity.moving_time > 0
-          ? activity.moving_time / (activity.distance / 1000)
-          : undefined;
+      // Spread GPS timestamps evenly across the activity duration
+      const startMs = new Date(activity.start_date).getTime();
+      const durationMs = activity.elapsed_time * 1000;
 
       const gpsTrack: GpsPoint[] | undefined = activity.map?.summary_polyline
-        ? decodePolyline(activity.map.summary_polyline).map((p, i) => ({
+        ? decodePolyline(activity.map.summary_polyline).map((p, i, arr) => ({
             lat: p.lat,
             lng: p.lng,
-            ts: Date.now() + i * 1000,
+            ts: startMs + Math.round((i / Math.max(arr.length - 1, 1)) * durationMs),
           }))
         : undefined;
 
@@ -106,6 +106,9 @@ export function StravaRunOption({ workoutId, workoutDate, units }: StravaRunOpti
 
       setPhase("done");
       setTimeout(() => router.push(`/workout/${workoutId}`), 1200);
+    } catch {
+      setErrorMsg("Failed to save the run. Please try again.");
+      setPhase("error");
     } finally {
       setIsSaving(false);
     }

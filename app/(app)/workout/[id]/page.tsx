@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
@@ -35,6 +35,7 @@ const TYPE_CONFIG: Record<
 
 export default function WorkoutPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const user = useLiveQuery(() => getUser(), [], null);
   const workout = useLiveQuery(() => getWorkoutById(id), [id], null);
 
@@ -43,7 +44,7 @@ export default function WorkoutPage() {
 
   const config = TYPE_CONFIG[workout.type] ?? { label: workout.type, variant: "default" as const };
   const gpsTrack = workout.gpsTrack as GpsPoint[] | null;
-  const isLoggable = workout.type !== "race" && workout.type !== "rest";
+  const isLoggable = workout.type !== "rest";
 
   const dateLabel = new Date(workout.date).toLocaleDateString("en-US", {
     weekday: "long",
@@ -54,13 +55,13 @@ export default function WorkoutPage() {
   return (
     <div>
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
-        <Link
-          href="/today"
+        <button
+          onClick={() => router.back()}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
-        </Link>
+        </button>
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="flex items-center gap-2 mb-1">
