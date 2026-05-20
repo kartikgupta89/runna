@@ -5,6 +5,12 @@ node_modules/
 .next/
 out/
 
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# SQLite (legacy — no longer used)
+data/
+
 # Env files
 .env
 .env.local
