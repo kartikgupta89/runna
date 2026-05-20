@@ -36,5 +36,5 @@ export async function GET(request: NextRequest) {
     name: data.athlete?.firstname ?? "",
   });
 
-  return NextResponse.redirect(`${base}/connect/strava?${params}`);
+  return NextResponse.redirect(`${base}/strava?${params}`);
 }
