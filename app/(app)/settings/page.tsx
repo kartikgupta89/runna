@@ -7,6 +7,7 @@ import { UnitsToggle } from "@/components/settings/UnitsToggle";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { FitnessTestList } from "@/components/settings/FitnessTestList";
 import { StravaConnect } from "@/components/settings/StravaConnect";
+import { UpdatePlanForm } from "@/components/settings/UpdatePlanForm";
 
 export default function SettingsPage() {
   const user = useLiveQuery(() => getUser(), [], null);
@@ -33,6 +34,10 @@ export default function SettingsPage() {
 
         <Section title="Strava">
           <StravaConnect user={user} />
+        </Section>
+
+        <Section title="Training plan">
+          <UpdatePlanForm />
         </Section>
 
         {fitnessTests.length > 0 && (

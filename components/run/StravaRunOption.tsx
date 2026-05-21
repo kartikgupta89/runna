@@ -30,11 +30,11 @@ export function StravaRunOption({ workoutId, workoutDate, units }: StravaRunOpti
   const [isSaving, setIsSaving] = useState(false);
 
   function openStrava() {
-    // Try deep link; if Strava isn't installed the browser ignores it
-    // Use location.href for fallback too (window.open is blocked outside gesture)
-    window.location.href = "strava://";
+    // Deep link tries to open Strava app directly to the record screen
+    window.location.href = "strava://record?sport=Run";
     setTimeout(() => {
-      window.location.href = "https://www.strava.com/dashboard";
+      // Fallback: strava.com/mobile prompts to open/download the app
+      window.location.href = "https://www.strava.com/mobile";
     }, 1500);
     setPhase("opened");
   }

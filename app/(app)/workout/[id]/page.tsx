@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, ExternalLink } from "lucide-react";
 import { getUser, getWorkoutById } from "@/lib/db/repository";
 import { WorkoutDetail } from "@/components/workout/WorkoutDetail";
 import { LogForm } from "@/components/workout/LogForm";
@@ -85,6 +85,22 @@ export default function WorkoutPage() {
               Start / Track Run
             </Link>
           </Button>
+        )}
+
+        {/* View on Strava link when this workout was synced from Strava */}
+        {workout.stravaActivityId && (
+          <a
+            href={`https://www.strava.com/activities/${workout.stravaActivityId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-[#FC4C02]/30 bg-[#FC4C02]/5 py-3 text-sm font-semibold text-[#FC4C02] hover:bg-[#FC4C02]/10 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+            </svg>
+            View on Strava
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         )}
 
         {/* Sync from Strava on the detail page (for re-sync or if skipped the run screen) */}
