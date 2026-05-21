@@ -83,6 +83,73 @@ export function getWorkoutById(id: string) {
   return db.workouts.get(id);
 }
 
+export function getWorkoutsForDateRange(from: Date, to: Date) {
+  const start = new Date(from);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setHours(23, 59, 59, 999);
+  return db.workouts.where("date").between(start, end, true, true).sortBy("date");
+}
+
+export interface UnplannedWorkoutInput {
+  date: Date;
+  title?: string;
+  distanceKm?: number;
+  durationMin?: number;
+  perceivedEffort?: number;
+  notes?: string;
+  gpsTrack?: GpsPoint[];
+}
+
+export async function addUnplannedWorkout(input: UnplannedWorkoutInput): Promise<string> {
+  const plan = await getActivePlan();
+  const planId = plan?.id ?? "unplanned";
+
+  let weekNumber = 0;
+  if (plan) {
+    const start = new Date(plan.startDate);
+    start.setHours(0, 0, 0, 0);
+    const d = new Date(input.date);
+    d.setHours(0, 0, 0, 0);
+    weekNumber = d < start ? 0 : Math.floor((d.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+  }
+
+  const id = crypto.randomUUID();
+  const distanceMeters = input.distanceKm ? input.distanceKm * 1000 : 0;
+  const durationSeconds = input.durationMin ? Math.round(input.durationMin * 60) : 0;
+  const avgPaceSecPerKm =
+    distanceMeters > 0 && durationSeconds > 0
+      ? durationSeconds / (distanceMeters / 1000)
+      : undefined;
+
+  const workoutDate = new Date(input.date);
+  workoutDate.setHours(12, 0, 0, 0);
+
+  await db.workouts.add({
+    id,
+    planId,
+    date: workoutDate,
+    weekNumber,
+    phase: "base",
+    type: "easy",
+    title: input.title ?? "Unplanned Run",
+    description: "",
+    segments: [],
+    plannedDistanceMeters: distanceMeters,
+    plannedDurationSeconds: durationSeconds,
+    completed: true,
+    completedAt: new Date(),
+    actualDistanceMeters: distanceMeters || undefined,
+    actualDurationSeconds: durationSeconds || undefined,
+    actualAvgPaceSecPerKm: avgPaceSecPerKm,
+    perceivedEffort: input.perceivedEffort,
+    notes: input.notes,
+    gpsTrack: input.gpsTrack,
+  });
+
+  return id;
+}
+
 // ─── Writes ───────────────────────────────────────────────────────────────────
 
 export async function markWorkoutComplete(id: string, data: {

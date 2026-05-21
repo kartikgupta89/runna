@@ -1,49 +1,92 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   getUser,
   getActivePlan,
   getWorkoutsForDate,
-  getWorkoutsForWeek,
+  getWorkoutsForDateRange,
 } from "@/lib/db/repository";
 import { WeekStrip } from "@/components/today/WeekStrip";
 import { TodayWorkoutCard, RestDayCard } from "@/components/today/TodayWorkoutCard";
+import { UnplannedRunCard } from "@/components/today/UnplannedRunCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-function currentWeekNumber(startDate: Date, today: Date): number {
-  const start = new Date(startDate);
+function getMondayOf(date: Date): Date {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - ((dow === 0 ? 7 : dow) - 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function weekNumForDate(planStart: Date, date: Date): number {
+  const start = new Date(planStart);
   start.setHours(0, 0, 0, 0);
-  const now = new Date(today);
-  now.setHours(0, 0, 0, 0);
-  if (now < start) return 0;
-  return Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  if (d < start) return 0;
+  return Math.floor((d.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 }
 
 export default function TodayPage() {
-  const today = new Date();
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [viewWeekStart, setViewWeekStart] = useState<Date>(() => getMondayOf(today));
+
+  function prevWeek() {
+    setViewWeekStart((d) => {
+      const prev = new Date(d);
+      prev.setDate(prev.getDate() - 7);
+      return prev;
+    });
+  }
+
+  function nextWeek() {
+    setViewWeekStart((d) => {
+      const next = new Date(d);
+      next.setDate(next.getDate() + 7);
+      return next;
+    });
+  }
+
+  function handleSelectDate(d: Date) {
+    const selected = new Date(d);
+    selected.setHours(0, 0, 0, 0);
+    setSelectedDate(selected);
+  }
+
+  const viewWeekEnd = useMemo(() => {
+    const d = new Date(viewWeekStart);
+    d.setDate(d.getDate() + 6);
+    return d;
+  }, [viewWeekStart]);
 
   const user = useLiveQuery(() => getUser(), [], null);
   const plan = useLiveQuery(() => getActivePlan(), [], null);
-  const todayWorkouts = useLiveQuery(() => getWorkoutsForDate(today), [], null);
 
-  const totalPlanWeeks = plan && plan !== null
-    ? Math.ceil((plan.raceDate.getTime() - plan.startDate.getTime()) / (7 * 24 * 60 * 60 * 1000))
-    : 0;
-  const rawWeekNum = plan && plan !== null ? currentWeekNumber(plan.startDate, today) : 0;
-  const currentWeekNum = Math.min(rawWeekNum, totalPlanWeeks);
   const weekWorkouts = useLiveQuery(
-    () => (plan && plan !== null && currentWeekNum > 0
-      ? getWorkoutsForWeek(plan.id, currentWeekNum)
-      : Promise.resolve([] as import("@/lib/db/dexie").WorkoutRecord[])),
-    [plan?.id, currentWeekNum],
+    () => getWorkoutsForDateRange(viewWeekStart, viewWeekEnd),
+    [viewWeekStart.getTime()],
     null,
   );
 
-  if (user === null || plan === null || todayWorkouts === null || weekWorkouts === null) {
+  const selectedDateWorkouts = useLiveQuery(
+    () => getWorkoutsForDate(selectedDate),
+    [selectedDate.getTime()],
+    null,
+  );
+
+  if (user === null || plan === null || weekWorkouts === null || selectedDateWorkouts === null) {
     return null;
   }
 
@@ -64,10 +107,25 @@ export default function TodayPage() {
     );
   }
 
-  const mainWorkout = todayWorkouts.find((w) => w.type !== "rest");
-  const isRestDay = todayWorkouts.every((w) => w.type === "rest") || todayWorkouts.length === 0;
+  const totalPlanWeeks = Math.ceil(
+    (plan.raceDate.getTime() - plan.startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
+  );
+  const rawWeekNum = weekNumForDate(plan.startDate, selectedDate);
+  const selectedWeekNum = Math.max(0, Math.min(rawWeekNum, totalPlanWeeks));
 
-  const dateLabel = today.toLocaleDateString("en-US", {
+  const mainWorkout = selectedDateWorkouts.find((w) => w.type !== "rest");
+  const isRestDay =
+    selectedDateWorkouts.length > 0 && selectedDateWorkouts.every((w) => w.type === "rest");
+  const hasNoWorkout = selectedDateWorkouts.length === 0;
+
+  const isToday =
+    selectedDate.getFullYear() === today.getFullYear() &&
+    selectedDate.getMonth() === today.getMonth() &&
+    selectedDate.getDate() === today.getDate();
+
+  const isPastOrToday = selectedDate <= today;
+
+  const dateLabel = selectedDate.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -75,59 +133,65 @@ export default function TodayPage() {
 
   return (
     <div>
-      <WeekStrip workouts={weekWorkouts} todayDate={today} />
+      <WeekStrip
+        workouts={weekWorkouts}
+        selectedDate={selectedDate}
+        viewWeekStart={viewWeekStart}
+        todayDate={today}
+        onSelectDate={handleSelectDate}
+        onPrevWeek={prevWeek}
+        onNextWeek={nextWeek}
+      />
 
       <div className="px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              {dateLabel}
-            </p>
-            <h1 className="text-xl font-bold mt-0.5">
-              Hey {user?.name?.split(" ")[0] ?? ""} 👋
-            </h1>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">{dateLabel}</p>
+            {isToday ? (
+              <h1 className="text-xl font-bold mt-0.5">
+                Hey {user?.name?.split(" ")[0] ?? ""} 👋
+              </h1>
+            ) : (
+              <h1 className="text-xl font-bold mt-0.5">
+                {isPastOrToday ? "Past run" : "Upcoming"}
+              </h1>
+            )}
           </div>
-          {currentWeekNum > 0 && (
+          {selectedWeekNum > 0 && (
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Week</p>
-              <p className="text-lg font-bold">{currentWeekNum}</p>
+              <p className="text-lg font-bold">{selectedWeekNum}</p>
             </div>
           )}
         </div>
 
         {mainWorkout ? (
-          <TodayWorkoutCard workout={mainWorkout} units={user?.preferredUnits ?? "metric"} />
+          <TodayWorkoutCard
+            workout={mainWorkout}
+            units={user?.preferredUnits ?? "metric"}
+          />
         ) : isRestDay ? (
           <RestDayCard />
-        ) : (
-          <EmptyState
-            title="No workout today"
-            description="Enjoy your unscheduled day off."
+        ) : hasNoWorkout ? (
+          <UnplannedRunCard
+            date={selectedDate}
+            todayDate={today}
+            units={user?.preferredUnits ?? "metric"}
           />
-        )}
+        ) : null}
 
-        {weekWorkouts.filter((w) => {
-          const wd = new Date(w.date);
-          wd.setHours(0, 0, 0, 0);
-          const td = new Date(today);
-          td.setHours(0, 0, 0, 0);
-          return wd > td && w.type !== "rest";
-        }).length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">This week</h2>
-            <div className="space-y-2">
-              {weekWorkouts
-                .filter((w) => {
-                  const wd = new Date(w.date);
-                  wd.setHours(0, 0, 0, 0);
-                  const td = new Date(today);
-                  td.setHours(0, 0, 0, 0);
-                  return wd > td && w.type !== "rest";
-                })
-                .map((w) => (
-                  <TodayWorkoutCard key={w.id} workout={w} units={user?.preferredUnits ?? "metric"} />
-                ))}
-            </div>
+        {/* Show all completed workouts for the day (e.g. multiple unplanned runs) */}
+        {selectedDateWorkouts.filter((w) => w.type !== "rest" && w !== mainWorkout).length > 0 && (
+          <div className="space-y-2">
+            {selectedDateWorkouts
+              .filter((w) => w.type !== "rest" && w !== mainWorkout)
+              .map((w) => (
+                <TodayWorkoutCard
+                  key={w.id}
+                  workout={w}
+                  units={user?.preferredUnits ?? "metric"}
+                />
+              ))}
           </div>
         )}
       </div>

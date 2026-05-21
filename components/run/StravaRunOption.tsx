@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ExternalLink, RefreshCw, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -222,12 +223,21 @@ export function StravaRunOption({ workoutId, workoutDate, units }: StravaRunOpti
   // ─── Error ────────────────────────────────────────────────────────────────
 
   if (phase === "error") {
+    const isNotConnected =
+      errorMsg.includes("not connected") || errorMsg.includes("token expired");
     return (
       <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
         <p className="text-sm text-destructive">{errorMsg}</p>
-        <Button variant="outline" size="sm" onClick={() => setPhase("idle")}>
-          Try again
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPhase("idle")}>
+            Try again
+          </Button>
+          {isNotConnected && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/settings">Go to Settings</Link>
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
