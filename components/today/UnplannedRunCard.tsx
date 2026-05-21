@@ -16,6 +16,8 @@ interface UnplannedRunCardProps {
   todayDate: Date;
   units: "metric" | "imperial";
   onAdded?: () => void;
+  /** When true, hides the "No workout planned" header — used when a workout already exists */
+  compact?: boolean;
 }
 
 type Mode = "idle" | "manual" | "strava-syncing" | "strava-pick";
@@ -28,7 +30,7 @@ function parseDuration(raw: string): number | null {
   return null;
 }
 
-export function UnplannedRunCard({ date, todayDate, units, onAdded }: UnplannedRunCardProps) {
+export function UnplannedRunCard({ date, todayDate, units, onAdded, compact }: UnplannedRunCardProps) {
   const [mode, setMode] = useState<Mode>("idle");
   const [distanceRaw, setDistanceRaw] = useState("");
   const [durationRaw, setDurationRaw] = useState("");
@@ -258,6 +260,36 @@ export function UnplannedRunCard({ date, todayDate, units, onAdded }: UnplannedR
   }
 
   // idle state
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5 text-muted-foreground"
+            onClick={() => { setMode("manual"); setErrorMsg(""); }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Log another run
+          </Button>
+          {isPastOrToday && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 text-[#FC4C02] border-[#FC4C02]/30 hover:border-[#FC4C02]/60 hover:bg-[#FC4C02]/5"
+              onClick={syncStrava}
+            >
+              <StravaIcon />
+              Sync Strava
+            </Button>
+          )}
+        </div>
+        {errorMsg && <p className="text-sm text-destructive text-center">{errorMsg}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-dashed p-5 space-y-3">
       <p className="text-sm text-muted-foreground text-center">No workout planned</p>

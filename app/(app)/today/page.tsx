@@ -172,13 +172,16 @@ export default function TodayPage() {
           />
         ) : isRestDay ? (
           <RestDayCard />
-        ) : hasNoWorkout ? (
+        ) : null}
+
+        {isPastOrToday && (
           <UnplannedRunCard
             date={selectedDate}
             todayDate={today}
             units={user?.preferredUnits ?? "metric"}
+            compact={!hasNoWorkout}
           />
-        ) : null}
+        )}
 
         {/* Show all completed workouts for the day (e.g. multiple unplanned runs) */}
         {selectedDateWorkouts.filter((w) => w.type !== "rest" && w !== mainWorkout).length > 0 && (
