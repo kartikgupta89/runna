@@ -99,6 +99,7 @@ export interface UnplannedWorkoutInput {
   perceivedEffort?: number;
   notes?: string;
   gpsTrack?: GpsPoint[];
+  stravaActivityId?: number;
 }
 
 export async function addUnplannedWorkout(input: UnplannedWorkoutInput): Promise<string> {
@@ -145,6 +146,7 @@ export async function addUnplannedWorkout(input: UnplannedWorkoutInput): Promise
     perceivedEffort: input.perceivedEffort,
     notes: input.notes,
     gpsTrack: input.gpsTrack,
+    stravaActivityId: input.stravaActivityId,
   });
 
   return id;

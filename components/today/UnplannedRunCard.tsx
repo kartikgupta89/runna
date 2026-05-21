@@ -5,7 +5,7 @@ import { Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addUnplannedWorkout } from "@/lib/db/repository";
+import { addUnplannedWorkout, getWorkoutsForDate } from "@/lib/db/repository";
 import { fetchStravaActivities, decodePolyline } from "@/lib/strava/client";
 import type { StravaSummaryActivity } from "@/lib/strava/types";
 import type { GpsPoint } from "@/lib/training/gps";
@@ -91,13 +91,28 @@ export function UnplannedRunCard({ date, todayDate, units, onAdded, compact }: U
       const after = Math.floor(d.getTime() / 1000) - 3600;
       const before = Math.floor(d.getTime() / 1000) + 86400 + 3600;
       const all = await fetchStravaActivities(after, before);
-      const runs = all.filter(
+      const allRuns = all.filter(
         (a) =>
           a.sport_type === "Run" ||
           a.type === "Run" ||
           a.sport_type === "TrailRun" ||
           a.sport_type === "VirtualRun",
       );
+
+      // Filter out activities already imported on this day
+      const existingWorkouts = await getWorkoutsForDate(date);
+      const importedIds = new Set(
+        existingWorkouts
+          .map((w) => w.stravaActivityId)
+          .filter((id): id is number => id !== undefined),
+      );
+      const runs = allRuns.filter((a) => !importedIds.has(a.id));
+
+      if (allRuns.length > 0 && runs.length === 0) {
+        setErrorMsg("All Strava activities for this day are already imported.");
+        setMode("idle");
+        return;
+      }
       if (runs.length === 0) {
         setErrorMsg("No runs found for this date on Strava.");
         setMode("idle");
@@ -142,6 +157,7 @@ export function UnplannedRunCard({ date, todayDate, units, onAdded, compact }: U
         durationMin: activity.moving_time / 60,
         notes: `Synced from Strava: ${activity.name}`,
         gpsTrack,
+        stravaActivityId: activity.id,
       });
       onAdded?.();
     } catch {

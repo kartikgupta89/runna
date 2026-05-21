@@ -103,8 +103,8 @@ export default function WorkoutPage() {
           </a>
         )}
 
-        {/* Sync from Strava on the detail page (for re-sync or if skipped the run screen) */}
-        {isLoggable && (
+        {/* Sync from Strava — only when not yet linked to a Strava activity */}
+        {isLoggable && !workout.stravaActivityId && (
           <StravaRunOption
             workoutId={workout.id}
             workoutDate={workout.date}
