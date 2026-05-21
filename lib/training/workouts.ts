@@ -54,7 +54,7 @@ function restWorkout(p: WorkoutParams): Workout {
 }
 
 function easyWorkout(p: WorkoutParams, distanceKm: number, strides = false): Workout {
-  const km = Math.max(3, distanceKm); // minimum 3 km
+  const km = Math.max(2, distanceKm); // minimum 2 km
   const segments: WorkoutSegment[] = [
     {
       kind: "main",
@@ -90,7 +90,7 @@ function easyWorkout(p: WorkoutParams, distanceKm: number, strides = false): Wor
 }
 
 function longWorkout(p: WorkoutParams, distanceKm: number): Workout {
-  const km = Math.max(8, distanceKm);
+  const km = Math.max(5, distanceKm);
   const segment: WorkoutSegment = {
     kind: "main",
     description: "Long run — easy, conversational effort throughout",
@@ -337,8 +337,8 @@ export function weekSlots(
     slots[3].kind = secondarySlot(phase, goalRace); // Thu
     slots[5].kind = "easy"; // Sat
   } else {
-    // 3-day: Sat easy instead of Thu
-    slots[5].kind = "easy";
+    // 3-day: Thu easy (Tue → Thu → Sun spacing, avoids back-to-back Sat/Sun)
+    slots[3].kind = "easy";
   }
 
   if (daysPerWeek >= 5) slots[2].kind = "easy"; // Wed
@@ -407,7 +407,8 @@ export function buildWeek(params: BuildWeekParams): Workout[] {
   // Fraction of weekly km for the long run (phase-dependent)
   const longFractions: Record<Phase, number> = { base: 0.30, build: 0.32, peak: 0.33, taper: 0.35 };
   const longMaxMins: Record<Phase, number> = { base: 90, build: 105, peak: 120, taper: 70 };
-  const longMinMins: Record<Phase, number> = { base: 60, build: 75, peak: 90, taper: 45 };
+  // Reduced minimums so early/beginner weeks don't get over-large long runs
+  const longMinMins: Record<Phase, number> = { base: 45, build: 55, peak: 70, taper: 30 };
   // Hard distance ceiling so shorter-race plans never exceed sensible long run distances
   const longMaxKm: Record<GoalRace, number> = { fivek: 13, tenk: 16, halfMarathon: 22, marathon: 32 };
 

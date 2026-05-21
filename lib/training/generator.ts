@@ -86,7 +86,7 @@ export function generatePlan(input: PlanInput): GeneratedPlan {
   const phases = splitPhases(totalWeeks);
 
   // 3. Mileage progression
-  const startKm = input.currentWeeklyKm ?? defaultStartKm(input.goalRace);
+  const startKm = input.currentWeeklyKm ?? defaultStartKm(input.goalRace, vdot);
   const maxKm = peakKm(input.goalRace, vdot);
   const weeklyTargets = computeWeeklyKm(totalWeeks, startKm, maxKm, phases);
 

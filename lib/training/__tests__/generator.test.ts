@@ -168,6 +168,25 @@ describe("mileage progression", () => {
     expect(peakKm).toBeLessThan(100);
   });
 
+  it("beginner 10K plan (5K in 37 min): week-1 easy runs ≤ 5 km each", () => {
+    const raceDate = new Date(MONDAY_JAN_6);
+    raceDate.setDate(raceDate.getDate() + 12 * 7);
+    const plan = generatePlan({
+      recentRace: { distanceMeters: 5000, timeSeconds: 37 * 60 },
+      goalRace: "tenk",
+      raceDate,
+      startDate: MONDAY_JAN_6,
+      daysPerWeek: 4,
+      planId: "test-beginner-10k",
+    });
+    const week1 = plan.weeks[0];
+    const easyRuns = week1.workouts.filter((w) => w.type === "easy");
+    for (const run of easyRuns) {
+      const km = run.plannedDistanceMeters / 1000;
+      expect(km, `week-1 easy run: ${km.toFixed(1)} km`).toBeLessThanOrEqual(5);
+    }
+  });
+
   it("10K plan: no single long run exceeds 16 km", () => {
     const plan = make10kPlan();
     for (const week of plan.weeks) {

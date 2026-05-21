@@ -81,14 +81,22 @@ const PEAK_KM_BASE: Record<GoalRace, number> = {
   marathon: 80,
 };
 
-export function defaultStartKm(goalRace: GoalRace): number {
-  return DEFAULT_START_KM[goalRace];
+/**
+ * Default starting weekly km, scaled by VDOT so beginners don't start
+ * with elite-level volume. VDOT 45 = 100% of base; ±2.5% per VDOT point,
+ * clamped between 60% and 125%.
+ */
+export function defaultStartKm(goalRace: GoalRace, vdot: number): number {
+  const base = DEFAULT_START_KM[goalRace];
+  const scale = Math.max(0.6, Math.min(1.25, 1 + (vdot - 45) * 0.025));
+  return Math.round(base * scale);
 }
 
 export function peakKm(goalRace: GoalRace, vdot: number): number {
   const base = PEAK_KM_BASE[goalRace];
-  const scale = 1 + (vdot - 45) * 0.01;
-  return base * Math.max(0.75, Math.min(1.25, scale));
+  // ±2% per VDOT point, clamped between 60% and 125%
+  const scale = Math.max(0.6, Math.min(1.25, 1 + (vdot - 45) * 0.02));
+  return base * scale;
 }
 
 // ─── Weekly-mileage progression ───────────────────────────────────────────────
@@ -130,7 +138,8 @@ export function computeWeeklyKm(
     if (isRecovery) {
       result.push(progressKm * 0.7);
     } else {
-      progressKm = Math.min(progressKm * 1.1, maxKm);
+      // Week 1 starts exactly at startKm; subsequent building weeks grow 10%
+      if (w > 1) progressKm = Math.min(progressKm * 1.1, maxKm);
       achievedPeak = Math.max(achievedPeak, progressKm);
       result.push(progressKm);
     }
