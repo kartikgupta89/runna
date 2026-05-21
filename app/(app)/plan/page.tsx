@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   getUser,
   getActivePlan,
   getAllWorkoutsForPlan,
+  getWorkoutsForDateRange,
 } from "@/lib/db/repository";
 import { PlanCalendar } from "@/components/plan/PlanCalendar";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -20,6 +22,14 @@ const RACE_LABELS: Record<string, string> = {
   marathon: "Marathon",
 };
 
+function getMondayOf(date: Date): Date {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - ((dow === 0 ? 7 : dow) - 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function PlanPage() {
   const user = useLiveQuery(() => getUser(), [], null);
   const plan = useLiveQuery(() => getActivePlan(), [], null);
@@ -29,7 +39,21 @@ export default function PlanPage() {
     null,
   );
 
-  if (user === null || plan === null || workouts === null) return null;
+  // Current calendar week — always loaded so we can show the pre-plan week
+  const [currentWeekStart, currentWeekEnd] = useMemo(() => {
+    const monday = getMondayOf(new Date());
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return [monday, sunday];
+  }, []);
+
+  const currentWeekWorkouts = useLiveQuery(
+    () => getWorkoutsForDateRange(currentWeekStart, currentWeekEnd),
+    [currentWeekStart.getTime()],
+    null,
+  );
+
+  if (user === null || plan === null || workouts === null || currentWeekWorkouts === null) return null;
 
   if (!plan) {
     return (
@@ -71,7 +95,13 @@ export default function PlanPage() {
         </div>
       </div>
 
-      <PlanCalendar plan={plan} workouts={workouts} units={user?.preferredUnits ?? "metric"} />
+      <PlanCalendar
+        plan={plan}
+        workouts={workouts}
+        units={user?.preferredUnits ?? "metric"}
+        currentWeekStart={currentWeekStart}
+        currentWeekWorkouts={currentWeekWorkouts}
+      />
     </div>
   );
 }

@@ -41,6 +41,8 @@ interface PlanCalendarProps {
   plan: TrainingPlanRow;
   workouts: WorkoutRow[];
   units: "metric" | "imperial";
+  currentWeekStart?: Date;
+  currentWeekWorkouts?: WorkoutRow[];
 }
 
 function weekStartDate(planStart: Date, weekNum: number): Date {
@@ -54,7 +56,7 @@ function fmtShort(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function PlanCalendar({ plan, workouts, units }: PlanCalendarProps) {
+export function PlanCalendar({ plan, workouts, units, currentWeekStart, currentWeekWorkouts }: PlanCalendarProps) {
   const weekNums = [...new Set(workouts.map((w) => w.weekNumber))].sort((a, b) => a - b);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -66,8 +68,22 @@ export function PlanCalendar({ plan, workouts, units }: PlanCalendarProps) {
 
   const [expandedWeek, setExpandedWeek] = useState<number>(currentWeek);
 
+  // Show pre-plan current week when today is before plan start
+  const planStart = new Date(plan.startDate);
+  planStart.setHours(0, 0, 0, 0);
+  const showPrePlan = currentWeekStart && currentWeekWorkouts && today < planStart;
+
   return (
     <div className="divide-y">
+      {showPrePlan && (
+        <PrePlanWeek
+          weekStart={currentWeekStart!}
+          workouts={currentWeekWorkouts!}
+          planStartDate={plan.startDate}
+          today={today}
+          units={units}
+        />
+      )}
       {weekNums.map((weekNum) => {
         const weekWorkouts = workouts
           .filter((w) => w.weekNumber === weekNum)
@@ -217,6 +233,120 @@ export function PlanCalendar({ plan, workouts, units }: PlanCalendarProps) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Pre-plan current-week section ───────────────────────────────────────────
+
+function PrePlanWeek({
+  weekStart,
+  workouts,
+  planStartDate,
+  today,
+  units,
+}: {
+  weekStart: Date;
+  workouts: WorkoutRow[];
+  planStartDate: Date;
+  today: Date;
+  units: "metric" | "imperial";
+}) {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const dateRange = `${fmtShort(weekStart)} – ${fmtShort(weekEnd)}`;
+  const planStartLabel = fmtShort(new Date(planStartDate));
+
+  function workoutForDay(dayIndex: number): WorkoutRow | undefined {
+    return workouts.find((w) => {
+      const dow = new Date(w.date).getDay();
+      return ((dow === 0 ? 7 : dow) - 1) === dayIndex;
+    });
+  }
+
+  return (
+    <div>
+      <div className="px-4 py-3 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/60 dark:border-amber-800/40">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="font-semibold text-sm">Current week</span>
+            <span className="ml-2 text-xs text-amber-700 dark:text-amber-400 font-medium">Pre-plan</span>
+            <div className="text-xs text-muted-foreground mt-0.5">{dateRange}</div>
+          </div>
+          <p className="text-xs text-muted-foreground text-right">
+            Plan starts<br />{planStartLabel}
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Log free runs this week in the Today tab.
+        </p>
+      </div>
+
+      <div className="px-4 pb-4 pt-2">
+        <div className="grid grid-cols-7 gap-1.5">
+          {DAY_HEADERS.map((d, i) => {
+            const cellDate = new Date(weekStart);
+            cellDate.setDate(cellDate.getDate() + i);
+            return (
+              <div key={d} className="text-center pb-1">
+                <div className="text-xs text-muted-foreground">{d}</div>
+                <div className="text-[10px] text-muted-foreground/70 tabular-nums">
+                  {cellDate.getDate()}
+                </div>
+              </div>
+            );
+          })}
+          {Array.from({ length: 7 }, (_, i) => {
+            const cellDate = new Date(weekStart);
+            cellDate.setDate(cellDate.getDate() + i);
+            const w = workoutForDay(i);
+            const isToday = cellDate.toDateString() === today.toDateString();
+            const isFuture = cellDate > today;
+
+            if (!w) {
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-16 rounded-lg flex items-center justify-center",
+                    isToday
+                      ? "ring-2 ring-primary ring-offset-1 bg-muted/30"
+                      : isFuture
+                      ? "bg-muted/20 border border-dashed"
+                      : "bg-muted/30",
+                  )}
+                >
+                  {isToday && (
+                    <span className="text-[10px] text-primary font-medium">Today</span>
+                  )}
+                </div>
+              );
+            }
+
+            const distKm = (w.actualDistanceMeters ?? w.plannedDistanceMeters) / 1000;
+            return (
+              <Link
+                key={i}
+                href={`/workout/${w.id}`}
+                className={cn(
+                  "h-16 rounded-lg border flex flex-col items-center justify-center gap-0.5 text-xs transition-colors hover:border-primary/50 hover:bg-muted/50",
+                  "bg-green-50 border-green-200 dark:bg-green-950/20",
+                  isToday ? "ring-2 ring-primary ring-offset-1" : "",
+                )}
+              >
+                <div className={cn("h-2.5 w-2.5 rounded-full", TYPE_DOT["easy"])} />
+                <span className="font-semibold text-[10px]">Run</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {units === "imperial"
+                    ? `${(distKm * 0.621371).toFixed(1)}`
+                    : `${distKm.toFixed(1)}`}
+                </span>
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

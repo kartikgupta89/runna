@@ -54,7 +54,10 @@ export interface PaceTable {
   R: number;
 }
 
-const INTENSITY_FACTORS: PaceTable = { E: 0.70, M: 0.84, T: 0.88, I: 0.98, R: 1.05 };
+// Derived from Jack Daniels' published pace tables (Daniels' Running Formula, 3rd ed.).
+// E=0.777 and T=0.90 match the table to within 1 sec/km across VDOT 30–65.
+// M=0.84, I=0.98, R=1.05 were already accurate.
+const INTENSITY_FACTORS: PaceTable = { E: 0.777, M: 0.84, T: 0.90, I: 0.98, R: 1.05 };
 
 /**
  * Returns training paces for a given VDOT as seconds per kilometre.

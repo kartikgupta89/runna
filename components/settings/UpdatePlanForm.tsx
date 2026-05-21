@@ -51,7 +51,7 @@ export function UpdatePlanForm({ onDone }: UpdatePlanFormProps) {
   const [daysPerWeek, setDaysPerWeek] = useState("4");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [done, setDone] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 56);
@@ -96,7 +96,8 @@ export function UpdatePlanForm({ onDone }: UpdatePlanFormProps) {
         raceDateIso,
         daysPerWeek: days,
       });
-      setDone(true);
+      setSuccessMsg("New training plan generated ✓");
+      setTimeout(() => setSuccessMsg(null), 4000);
       onDone?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -105,16 +106,11 @@ export function UpdatePlanForm({ onDone }: UpdatePlanFormProps) {
     }
   }
 
-  if (done) {
-    return (
-      <p className="text-sm text-green-600 font-medium">
-        New training plan generated ✓
-      </p>
-    );
-  }
-
   return (
     <div className="space-y-4">
+      {successMsg && (
+        <p className="text-sm text-green-600 font-medium">{successMsg}</p>
+      )}
       <p className="text-sm text-muted-foreground">
         Enter a recent race or time trial to recalculate your fitness and generate a fresh plan.
         Your profile and Strava connection will be kept.

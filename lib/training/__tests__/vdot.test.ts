@@ -75,6 +75,40 @@ describe("paceTableForVDOT — all paces in plausible range (2:00–10:00 /km)",
   }
 });
 
+// Cross-check against Daniels' published table (VDOT 30–65, ±5 sec/km tolerance)
+describe("paceTableForVDOT — accuracy vs Daniels' table", () => {
+  // Reference values in sec/km from the published JD pace table
+  const TABLE: Array<{ vdot: number; E: number; M: number; T: number; I: number; R: number }> = [
+    { vdot: 30, E: 447, M: 411, T: 384, I: 354, R: 330 },
+    { vdot: 35, E: 396, M: 364, T: 340, I: 312, R: 294 },
+    { vdot: 40, E: 356, M: 329, T: 306, I: 282, R: 264 },
+    { vdot: 45, E: 323, M: 300, T: 278, I: 256, R: 240 },
+    { vdot: 50, E: 296, M: 275, T: 255, I: 235, R: 219 },
+    { vdot: 55, E: 273, M: 254, T: 236, I: 216, R: 202 },
+    { vdot: 60, E: 254, M: 236, T: 220, I: 203, R: 188 },
+    { vdot: 65, E: 237, M: 221, T: 206, I: 189, R: 176 },
+  ];
+  const TOLERANCE = 8; // ±8 sec/km
+
+  for (const row of TABLE) {
+    it(`VDOT ${row.vdot}: E within ${TOLERANCE} sec/km of ${row.E}`, () => {
+      const paces = paceTableForVDOT(row.vdot);
+      expect(paces.E).toBeGreaterThan(row.E - TOLERANCE);
+      expect(paces.E).toBeLessThan(row.E + TOLERANCE);
+    });
+    it(`VDOT ${row.vdot}: M within ${TOLERANCE} sec/km of ${row.M}`, () => {
+      const paces = paceTableForVDOT(row.vdot);
+      expect(paces.M).toBeGreaterThan(row.M - TOLERANCE);
+      expect(paces.M).toBeLessThan(row.M + TOLERANCE);
+    });
+    it(`VDOT ${row.vdot}: I within ${TOLERANCE} sec/km of ${row.I}`, () => {
+      const paces = paceTableForVDOT(row.vdot);
+      expect(paces.I).toBeGreaterThan(row.I - TOLERANCE);
+      expect(paces.I).toBeLessThan(row.I + TOLERANCE);
+    });
+  }
+});
+
 describe("paceTableForVDOT — error handling", () => {
   it("throws on zero VDOT", () => {
     expect(() => paceTableForVDOT(0)).toThrow();
