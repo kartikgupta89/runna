@@ -57,20 +57,24 @@ function fmtShort(d: Date) {
 }
 
 export function PlanCalendar({ plan, workouts, units, currentWeekStart, currentWeekWorkouts }: PlanCalendarProps) {
-  const weekNums = [...new Set(workouts.map((w) => w.weekNumber))].sort((a, b) => a - b);
+  // weekNumber 0 means "before plan start" — shown in PrePlanWeek, not in the regular list
+  const weekNums = [...new Set(workouts.map((w) => w.weekNumber))]
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const currentWeek = Math.max(
-    1,
-    Math.floor((today.getTime() - new Date(plan.startDate).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1,
-  );
-
-  const [expandedWeek, setExpandedWeek] = useState<number>(currentWeek);
-
-  // Show pre-plan current week when today is before plan start
   const planStart = new Date(plan.startDate);
   planStart.setHours(0, 0, 0, 0);
+
+  // 0 means plan hasn't started yet — no plan week should show "Current"
+  const currentWeek =
+    today < planStart
+      ? 0
+      : Math.floor((today.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+  const [expandedWeek, setExpandedWeek] = useState<number>(currentWeek > 0 ? currentWeek : 1);
+
   const showPrePlan = currentWeekStart && currentWeekWorkouts && today < planStart;
 
   return (
