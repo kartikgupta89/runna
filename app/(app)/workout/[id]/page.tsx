@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, MapPin, ExternalLink } from "lucide-react";
-import { getUser, getWorkoutById } from "@/lib/db/repository";
+import { ArrowLeft, MapPin, ExternalLink, Trash2 } from "lucide-react";
+import { getUser, getWorkoutById, deleteWorkout } from "@/lib/db/repository";
 import { WorkoutDetail } from "@/components/workout/WorkoutDetail";
 import { LogForm } from "@/components/workout/LogForm";
 import { StravaRunOption } from "@/components/run/StravaRunOption";
@@ -36,8 +37,20 @@ const TYPE_CONFIG: Record<
 export default function WorkoutPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const user = useLiveQuery(() => getUser(), [], null);
   const workout = useLiveQuery(() => getWorkoutById(id), [id], null);
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    try {
+      await deleteWorkout(id);
+      router.back();
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   if (user === null || workout === null) return null;
   if (!workout) return <div className="p-8 text-center text-muted-foreground">Workout not found</div>;
@@ -128,9 +141,51 @@ export default function WorkoutPage() {
               <h2 className="text-sm font-semibold mb-3">
                 {workout.completed ? "Run log" : "Log manually"}
               </h2>
-              <LogForm workout={workout} units={user?.preferredUnits ?? "metric"} />
+              <LogForm
+                key={String(workout.completed)}
+                workout={workout}
+                units={user?.preferredUnits ?? "metric"}
+              />
             </div>
           </>
+        )}
+
+        <Separator />
+
+        {/* Delete activity */}
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete activity
+          </button>
+        ) : (
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 space-y-3">
+            <p className="text-sm font-semibold text-destructive">Delete this activity?</p>
+            <p className="text-xs text-muted-foreground">This cannot be undone.</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setConfirmDelete(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
