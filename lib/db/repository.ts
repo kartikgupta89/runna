@@ -71,24 +71,45 @@ export function getWorkoutsForWeek(planId: string, weekNumber: number) {
     .sortBy("date");
 }
 
-export function getWorkoutsForDate(date: Date) {
+/**
+ * Returns workouts for a date that belong to the active plan, are unplanned,
+ * or are completed (historical runs from any past plan the user actually did).
+ * Uncompleted workouts from deactivated plans are excluded.
+ */
+export async function getWorkoutsForDate(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
   const end = new Date(date);
   end.setHours(23, 59, 59, 999);
-  return db.workouts.where("date").between(start, end, true, true).toArray();
+
+  const [all, activePlan] = await Promise.all([
+    db.workouts.where("date").between(start, end, true, true).toArray(),
+    getActivePlan(),
+  ]);
+  const activePlanId = activePlan?.id;
+  return all.filter(
+    (w) => w.planId === activePlanId || w.planId === "unplanned" || w.completed,
+  );
 }
 
 export function getWorkoutById(id: string) {
   return db.workouts.get(id);
 }
 
-export function getWorkoutsForDateRange(from: Date, to: Date) {
+export async function getWorkoutsForDateRange(from: Date, to: Date) {
   const start = new Date(from);
   start.setHours(0, 0, 0, 0);
   const end = new Date(to);
   end.setHours(23, 59, 59, 999);
-  return db.workouts.where("date").between(start, end, true, true).sortBy("date");
+
+  const [all, activePlan] = await Promise.all([
+    db.workouts.where("date").between(start, end, true, true).sortBy("date"),
+    getActivePlan(),
+  ]);
+  const activePlanId = activePlan?.id;
+  return all.filter(
+    (w) => w.planId === activePlanId || w.planId === "unplanned" || w.completed,
+  );
 }
 
 export interface UnplannedWorkoutInput {
