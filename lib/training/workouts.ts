@@ -411,11 +411,20 @@ export function buildWeek(params: BuildWeekParams): Workout[] {
   const longMinMins: Record<Phase, number> = { base: 45, build: 55, peak: 70, taper: 30 };
   // Hard distance ceiling so shorter-race plans never exceed sensible long run distances
   const longMaxKm: Record<GoalRace, number> = { fivek: 13, tenk: 16, halfMarathon: 22, marathon: 32 };
+  // Race-specific floor: ensures runners comfortably exceed race distance before race day.
+  // Peak values — 5K: 8 km (1.6×), 10K: 12 km (1.2×), half: 18 km (~85%), marathon: 26 km (~62%)
+  const longRaceMinKm: Record<GoalRace, { build: number; peak: number }> = {
+    fivek:        { build: 6,  peak: 8  },
+    tenk:         { build: 9,  peak: 12 },
+    halfMarathon: { build: 14, peak: 18 },
+    marathon:     { build: 22, peak: 26 },
+  };
 
   const rawLongKm = targetKm * longFractions[phase];
   const rawLongMins = rawLongKm * paces.E / 60;
   const clampedLongMins = Math.max(longMinMins[phase], Math.min(longMaxMins[phase], rawLongMins));
-  const longKm = Math.min(clampedLongMins * 60 / paces.E, longMaxKm[goalRace]);
+  const raceFloor = longRaceMinKm[goalRace][phase as "build" | "peak"] ?? 0;
+  const longKm = Math.min(Math.max(clampedLongMins * 60 / paces.E, raceFloor), longMaxKm[goalRace]);
 
   // Total km used by quality workouts
   const qualitySlots = slots.filter((s) => isHardKind(s.kind));

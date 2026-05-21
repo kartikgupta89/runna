@@ -376,6 +376,10 @@ export async function wipeAllData(): Promise<void> {
   await deleteAllData();
 }
 
+export async function deleteFitnessTest(id: string): Promise<void> {
+  await db.fitnessTests.delete(id);
+}
+
 // ─── Strava token management ──────────────────────────────────────────────────
 
 import type { StravaTokens } from "@/lib/strava/types";

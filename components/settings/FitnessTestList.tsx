@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { deleteFitnessTest } from "@/lib/db/repository";
 import type { FitnessTestRow } from "@/lib/db/dexie";
 
 interface FitnessTestListProps {
@@ -18,9 +23,20 @@ function formatDistance(meters: number): string {
 }
 
 export function FitnessTestList({ tests }: FitnessTestListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      await deleteFitnessTest(id);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-2">
-      {tests.slice(0, 5).map((test) => (
+      {tests.map((test) => (
         <div
           key={test.id}
           className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm"
@@ -33,9 +49,19 @@ export function FitnessTestList({ tests }: FitnessTestListProps) {
               {new Date(test.date).toLocaleDateString()} · {test.source}
             </p>
           </div>
-          <div className="text-right">
-            <p className="font-bold text-lg">{test.vdotResult.toFixed(1)}</p>
-            <p className="text-xs text-muted-foreground">VDOT</p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="font-bold text-lg">{test.vdotResult.toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">VDOT</p>
+            </div>
+            <button
+              onClick={() => handleDelete(test.id)}
+              disabled={deletingId === test.id}
+              className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+              aria-label="Delete fitness test"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         </div>
       ))}
