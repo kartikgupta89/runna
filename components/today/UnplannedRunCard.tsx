@@ -159,6 +159,7 @@ export function UnplannedRunCard({ date, todayDate, units, onAdded, compact }: U
         gpsTrack,
         stravaActivityId: activity.id,
       });
+      setMode("idle");
       onAdded?.();
     } catch {
       setErrorMsg("Failed to save the run. Please try again.");

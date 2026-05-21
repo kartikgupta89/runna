@@ -176,6 +176,7 @@ export default function TodayPage() {
 
         {isPastOrToday && (
           <UnplannedRunCard
+            key={selectedDate.toISOString()}
             date={selectedDate}
             todayDate={today}
             units={user?.preferredUnits ?? "metric"}
