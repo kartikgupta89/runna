@@ -67,18 +67,18 @@ export function phaseForWeek(weekNumber: number, phases: PhaseBlock[]): Phase {
 // ─── Mileage targets ──────────────────────────────────────────────────────────
 
 const DEFAULT_START_KM: Record<GoalRace, number> = {
-  fivek: 25,
-  tenk: 35,
-  halfMarathon: 45,
-  marathon: 55,
+  fivek: 20,
+  tenk: 25,
+  halfMarathon: 40,
+  marathon: 50,
 };
 
 /** Peak weekly km at VDOT 45 (mid-pack), scaled ±1% per VDOT point. */
 const PEAK_KM_BASE: Record<GoalRace, number> = {
-  fivek: 50,
-  tenk: 65,
-  halfMarathon: 75,
-  marathon: 85,
+  fivek: 35,   // long run ~11 km at peak
+  tenk: 50,    // long run ~16 km at peak
+  halfMarathon: 65, // long run ~21 km at peak (≈ race distance)
+  marathon: 80,
 };
 
 export function defaultStartKm(goalRace: GoalRace): number {

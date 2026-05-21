@@ -35,6 +35,20 @@ function makeMarathonPlan(): GeneratedPlan {
   });
 }
 
+/** 10K plan: 12 weeks out, 4 days/week, 45:00 10K reference. */
+function make10kPlan(): GeneratedPlan {
+  const raceDate = new Date(MONDAY_JAN_6);
+  raceDate.setDate(raceDate.getDate() + 12 * 7);
+  return generatePlan({
+    recentRace: { distanceMeters: 10000, timeSeconds: 45 * 60 },
+    goalRace: "tenk",
+    raceDate,
+    startDate: MONDAY_JAN_6,
+    daysPerWeek: 4,
+    planId: "test-10k",
+  });
+}
+
 /** Half-marathon plan: 12 weeks out, 5 days/week, 1:55 half reference. */
 function makeHalfPlan(): GeneratedPlan {
   const raceDate = new Date(MONDAY_JAN_6);
@@ -152,6 +166,28 @@ describe("mileage progression", () => {
     const peakKm = Math.max(...plan.weeks.map((w) => w.targetKm));
     expect(peakKm).toBeGreaterThan(55);
     expect(peakKm).toBeLessThan(100);
+  });
+
+  it("10K plan: no single long run exceeds 16 km", () => {
+    const plan = make10kPlan();
+    for (const week of plan.weeks) {
+      const longRun = week.workouts.find((w) => w.type === "long");
+      if (longRun) {
+        const km = longRun.plannedDistanceMeters / 1000;
+        expect(km, `week ${week.weekNumber} long run ${km.toFixed(1)} km`).toBeLessThanOrEqual(16);
+      }
+    }
+  });
+
+  it("5K plan: no single long run exceeds 13 km", () => {
+    const plan = make5kPlan();
+    for (const week of plan.weeks) {
+      const longRun = week.workouts.find((w) => w.type === "long");
+      if (longRun) {
+        const km = longRun.plannedDistanceMeters / 1000;
+        expect(km, `week ${week.weekNumber} long run ${km.toFixed(1)} km`).toBeLessThanOrEqual(13);
+      }
+    }
   });
 });
 
